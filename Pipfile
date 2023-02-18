@@ -4,12 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
+clean-text = "*"
+pymongo = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+sanic = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
 python_version = "3.9"
 
 [scripts]
-dev = "flask run"
+dev = "uvicorn main:app --reload"
+
+[pipenv]
+allow_prereleases = true
