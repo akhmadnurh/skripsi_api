@@ -16,6 +16,32 @@ def get_applicants():
         return json({"message": str(e)}, status=500)
 
 
+def get_applicants_brief(data={}):
+    try:
+        # Get job role
+        job_id = data["job_id"][0]
+        # job_id = job_id
+        print(job_id)
+        # Get job
+        job = db["jobstreet"].find_one({"_id": ObjectId(job_id)})
+        if job:
+            res = (
+                db["linkedin"]
+                .find({"role": job["role"]}, {"_id": 1, "fullname": 1, "headline": 1})
+                .sort("_id", -1)
+            )
+
+            if res:
+                return json({"data": res}, status=200)
+            else:
+                return json({"message": "Applicant was not found."}, status=404)
+        else:
+            return json({"message": "Applicant was not found."}, status=404)
+
+    except Exception as e:
+        return json({"message": str(e)}, status=500)
+
+
 def get_applicant_by_id(applicant_id):
     try:
         res = db["linkedin"].find_one({"_id": ObjectId(applicant_id)})

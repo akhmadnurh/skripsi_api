@@ -16,6 +16,23 @@ def get_jobs():
         return json({"message": str(e)}, status=500)
 
 
+def get_jobs_brief():
+    try:
+        res = (
+            db["jobstreet"]
+            .find({}, {"_id": 1, "job_name": 1, "description": 1, "company": 1})
+            .sort("_id", -1)
+        )
+
+        if res:
+            return json({"data": res}, status=200)
+        else:
+            return json({"message": "Job was not found"}, status=404)
+
+    except Exception as e:
+        return json({"message": str(e)}, status=500)
+
+
 def get_job_by_id(job_id):
     try:
         res = db["jobstreet"].find_one({"_id": ObjectId(job_id)})

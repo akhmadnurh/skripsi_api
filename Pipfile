@@ -8,6 +8,7 @@ clean-text = "*"
 pymongo = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 sanic = "*"
+sanic-ext = "*"
 
 [dev-packages]
 black = "*"

@@ -5,6 +5,7 @@ from src.controllers.applicant_controller import (
     create_applicant,
     update_applicant,
     delete_applicant,
+    get_applicants_brief,
 )
 
 BASE_PATH = "/api/applicant"
@@ -13,6 +14,11 @@ BASE_PATH = "/api/applicant"
 @app.get(f"{BASE_PATH}")
 def get_applicant_route(request):
     return get_applicants()
+
+
+@app.get(f"{BASE_PATH}/brief")
+def get_applicant_brief_route(request):
+    return get_applicants_brief(request.args)
 
 
 @app.get(f"{BASE_PATH}/<applicant_id>")

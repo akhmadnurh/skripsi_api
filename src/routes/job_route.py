@@ -5,6 +5,7 @@ from src.controllers.job_controller import (
     create_job,
     update_job,
     delete_job,
+    get_jobs_brief,
 )
 
 BASE_PATH = "/api/job"
@@ -13,6 +14,11 @@ BASE_PATH = "/api/job"
 @app.get(f"{BASE_PATH}")
 async def get_jobs_route(request):
     return get_jobs()
+
+
+@app.get(f"{BASE_PATH}/brief")
+async def get_jobs_brief_route(request):
+    return get_jobs_brief()
 
 
 @app.get(f"{BASE_PATH}/<job_id>")
