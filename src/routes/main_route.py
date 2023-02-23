@@ -4,6 +4,7 @@ from main import app
 # Import all routes
 from src.routes import job_route
 from src.routes import applicant_route
+from src.routes import result_route
 
 
 @app.get("/")
