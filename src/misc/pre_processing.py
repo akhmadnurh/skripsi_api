@@ -1,6 +1,7 @@
 # Remove punctuation, numbers, and emojis
 import string
 from cleantext import clean
+from nltk.tokenize import word_tokenize
 
 
 def remove_punc(val):
@@ -29,3 +30,8 @@ def remove_punc(val):
         replace_with_digit=" ",
         replace_with_currency_symbol=" ",
     )
+
+
+# Tokenizing
+def tokenizing(val):
+    return word_tokenize(val)

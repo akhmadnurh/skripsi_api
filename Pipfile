@@ -9,6 +9,7 @@ pymongo = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 sanic = "*"
 sanic-ext = "*"
+nltk = "*"
 
 [dev-packages]
 black = "*"
