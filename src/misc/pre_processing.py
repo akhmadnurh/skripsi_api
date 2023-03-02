@@ -1,14 +1,14 @@
 # Remove punctuation, numbers, and emojis
 import string
 from cleantext import clean
+import nltk
 from nltk.tokenize import word_tokenize
+from nltk.stem import SnowballStemmer
 
 
 def remove_punc(val):
-    # string.punctuation = "".join([string.punctuation, "➧", "·"])
     for i in string.punctuation:
         val = val.replace(i, " ")
-    # using regex
 
     return clean(
         val,
@@ -35,3 +35,15 @@ def remove_punc(val):
 # Tokenizing
 def tokenizing(val):
     return word_tokenize(val)
+
+
+# Remove stopwords
+def remove_stopword(val):
+    stopwords = nltk.corpus.stopwords.words("english")
+    return [not_stopword for not_stopword in val if not_stopword not in stopwords]
+
+
+# Snowball Stemming
+def snow_stemming(val):
+    snowball = SnowballStemmer(language="english")
+    return [snowball.stem(word) for word in val]

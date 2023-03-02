@@ -1,6 +1,9 @@
 from main import app
-from src.controllers.source_controller import get_data_source
-from src.controllers.result_controller import get_result
+from src.controllers.result_controller import (
+    get_result,
+    pre_processing,
+    get_data_source,
+)
 
 BASE_PATH = "/api/result"
 
@@ -13,3 +16,8 @@ async def get_data_source_route(request):
 @app.post(f"{BASE_PATH}/")
 async def get_result_route(request):
     return get_result(request.json)
+
+
+@app.post(f"{BASE_PATH}/preprocessing")
+async def pre_processing_route(request):
+    return pre_processing(request.json)
