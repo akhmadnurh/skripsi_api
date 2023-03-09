@@ -11,7 +11,8 @@ from src.misc.pre_processing import (
     snow_stemming,
 )
 
-from src.misc.pre_processing import remove_punc, tokenizing
+from src.misc.tf_idf import tf_idf
+from src.misc.cosine_similarity import cosine_similarity
 
 
 def get_result(data):
@@ -38,8 +39,9 @@ def pre_processing(data):
 
         result = {}
 
+        # Data source
         job_data = db["jobstreet"].find_one({"_id": ObjectId(job_id)})
-        applicants_data = db["linkedin"].find({"role": role})
+        applicants_data = list(db["linkedin"].find({"role": role}))
 
         # Job Preprocessing
         job_result = {}
@@ -47,13 +49,18 @@ def pre_processing(data):
         job_result["tokenizing"] = tokenizing(job_result["remove_punct"])
         job_result["no_stopword"] = remove_stopword(job_result["tokenizing"])
         job_result["stem"] = snow_stemming(job_result["no_stopword"])
-        job_result["uuid"] = UUID
 
-        # Upload to db
-        # db['pre_jobstreet'].insert_one(_result)
+        # Upload job preprocessing to db
+        job_result = {
+            "uuid": UUID,
+            "type": "job",
+            "ref_id": job_data["_id"],
+            "result": job_result,
+        }
+        db["text_preprocessing"].insert_one(job_result)
 
         # Applicants Preprocessing
-        applicant_result = []
+        applicant_results = []
         for applicant in applicants_data:
             _result = {}
 
@@ -81,23 +88,41 @@ def pre_processing(data):
                 [_headline, _about, _education, _experience, _skill, _license, _project]
             )
 
-            _result["remove_punct"] = remove_punc(merged_data)
-            _result["tokenizing"] = tokenizing(_result["remove_punct"])
-            _result["no_stopword"] = remove_stopword(_result["tokenizing"])
-            _result["stem"] = snow_stemming(_result["no_stopword"])
+            _remove_punct = remove_punc(merged_data)
+            _tokenizing = tokenizing(_remove_punct)
+            _no_stopword = remove_stopword(_tokenizing)
+            _stem = snow_stemming(_no_stopword)
 
+            _result["result"] = {
+                "remove_punct": _remove_punct,
+                "tokenizing": _tokenizing,
+                "no_stopword": _no_stopword,
+                "stem": _stem,
+            }
+
+            _result["type"] = "applicant"
             _result["uuid"] = UUID
+            _result["ref_id"] = applicant["_id"]
 
-            # Upload to db
-            # db['pre_linkedin'].insert_one(_result)
+            applicant_results.append(_result)
 
-            if applicant_id == str(applicant["_id"]):
-                applicant_result.append(_result)
+        # Upload to applicant preprocessing
+        db["text_preprocessing"].insert_many(applicant_results)
 
-        result["job"] = job_result
-        result["applicant"] = applicant_result
+        # Response data
+        result["job"] = db["text_preprocessing"].find_one(
+            {"type": "job", "uuid": UUID, "ref_id": ObjectId(job_id)}
+        )
+        result["applicant"] = db["text_preprocessing"].find_one(
+            {
+                "type": "applicant",
+                "uuid": UUID,
+                "ref_id": ObjectId(applicant_id),
+            }
+        )
+        result["uuid"] = UUID
 
-        return json({"result": result, "uuid": UUID}, status=200)
+        return json({"result": result}, status=200)
     except Exception as e:
         return json({"message": str(e)}, status=500)
 
@@ -115,5 +140,87 @@ def get_data_source(args):
         applicant = db["linkedin"].find_one({"_id": ObjectId(applicant_id)})
 
         return json({"data": {"job": job, "applicant": applicant}}, status=200)
+    except Exception as e:
+        return json({"message": str(e)}, status=500)
+
+
+def calc_tf_idf(data):
+    try:
+        job_id, applicant_id, uuid = itemgetter("job_id", "applicant_id", "uuid")(data)
+        pre_data = list(db["text_preprocessing"].find({"uuid": uuid}))
+        result = tf_idf(pre_data)
+
+        # Upload data
+        feature_names, tf_idf_results = result
+
+        for index in range(len(tf_idf_results)):
+            tf_idf_results[index] = {
+                "feature_names": feature_names,
+                "ref_id": pre_data[index]["ref_id"],
+                "result": tf_idf_results[index],
+                "type": "applicant",
+                "uuid": uuid,
+            }
+            if pre_data[index]["type"] == "job":
+                tf_idf_results[index]["type"] = "job"
+
+        db["term_weighting"].insert_many(tf_idf_results)
+
+        # Response data
+        response = {}
+        response["job"] = db["term_weighting"].find_one(
+            {"type": "job", "uuid": uuid, "ref_id": ObjectId(job_id)}
+        )
+        response["applicant"] = db["term_weighting"].find_one(
+            {
+                "type": "applicant",
+                "uuid": uuid,
+                "ref_id": ObjectId(applicant_id),
+            }
+        )
+        response["uuid"] = uuid
+
+        return json(
+            {"result": response},
+            status=200,
+        )
+    except Exception as e:
+        return json({"message": str(e)}, status=500)
+
+
+def calc_cosine_similarity(data):
+    try:
+        job_id, applicant_id, uuid = itemgetter("job_id", "applicant_id", "uuid")(data)
+
+        tf_idf = list(db["term_weighting"].find({"uuid": uuid}))
+
+        result = cosine_similarity(tf_idf)
+        for index in range(len(result)):
+            result[index] = {
+                "ref_id": tf_idf[index]["ref_id"],
+                "result": result[index],
+                "uuid": uuid,
+            }
+
+        # Upload to db
+        db["cosine_similarity"].insert_many(result)
+
+        # Response data
+        response = {}
+        response["job"] = db["cosine_similarity"].find_one(
+            {"uuid": uuid, "ref_id": ObjectId(job_id)}
+        )
+        response["applicant"] = db["cosine_similarity"].find_one(
+            {
+                "uuid": uuid,
+                "ref_id": ObjectId(applicant_id),
+            }
+        )
+        response["uuid"] = uuid
+
+        return json(
+            {"result": response},
+            status=200,
+        )
     except Exception as e:
         return json({"message": str(e)}, status=500)
