@@ -40,6 +40,9 @@ def tokenizing(val):
 # Remove stopwords
 def remove_stopword(val):
     stopwords = nltk.corpus.stopwords.words("english")
+    extended_stopwords = f = open("./src/misc/stopwords.txt").read().splitlines()
+    stopwords.extend(extended_stopwords)
+
     return [not_stopword for not_stopword in val if not_stopword not in stopwords]
 
 
@@ -47,3 +50,6 @@ def remove_stopword(val):
 def snow_stemming(val):
     snowball = SnowballStemmer(language="english")
     return [snowball.stem(word) for word in val]
+
+
+remove_stopword("ok")

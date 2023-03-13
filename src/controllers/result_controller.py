@@ -17,14 +17,35 @@ from src.misc.cosine_similarity import cosine_similarity
 
 def get_result(data):
     try:
-        job_id, applicant_id = itemgetter("job_id", "applicant_id")(data)
+        uuid = itemgetter("uuid")(data)
 
-        job_data = db["jobstreet"].find_one({"_id": ObjectId(job_id)})
-        applicant_data = db["linkedin"].find_one({"_id": ObjectId(applicant_id)})
-
-        result = {}
-        result["remove_punct"] = remove_punc(job_data["description"])
-        result["tokenizing"] = tokenizing(result["remove_punct"])
+        result = list(
+            db["cosine_similarity"].aggregate(
+                [
+                    {"$match": {"uuid": uuid, "type": "applicant"}},
+                    {
+                        "$lookup": {
+                            "from": "linkedin",
+                            "localField": "ref_id",
+                            "foreignField": "_id",
+                            "as": "applicant",
+                            "pipeline": [
+                                {
+                                    "$project": {
+                                        "_id": 1,
+                                        "url": 1,
+                                        "role": 1,
+                                        "fullname": 1,
+                                    }
+                                }
+                            ],
+                        },
+                    },
+                    {"$project": {"_id": 1, "result": 1, "applicant": 1, "ref_id": 1}},
+                    {"$sort": {"result": -1}},
+                ]
+            )
+        )
         return json(result, status=200)
     except Exception as e:
         return json({"message": str(e)}, status=500)
@@ -200,6 +221,11 @@ def calc_cosine_similarity(data):
                 "ref_id": tf_idf[index]["ref_id"],
                 "result": result[index],
                 "uuid": uuid,
+                "type": (
+                    "job"
+                    if tf_idf[index]["ref_id"] == ObjectId(job_id)
+                    else "applicant"
+                ),
             }
 
         # Upload to db
