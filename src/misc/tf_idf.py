@@ -7,7 +7,7 @@ def tf_idf(datas):
     processed_data = []
 
     for data in datas:
-        processed_data.append(" ".join(data["result"]["stem"]))
+        processed_data.append(" ".join(data["result"]["keyword"]))
 
     vectorizer = TfidfVectorizer()
     tf_idf_response = vectorizer.fit_transform(processed_data)

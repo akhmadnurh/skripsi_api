@@ -4,6 +4,7 @@ from cleantext import clean
 import nltk
 from nltk.tokenize import word_tokenize
 from nltk.stem import SnowballStemmer
+import json
 
 
 def remove_punc(val):
@@ -52,4 +53,9 @@ def snow_stemming(val):
     return [snowball.stem(word) for word in val]
 
 
-remove_stopword("ok")
+# Filter by keyword
+def filter_keyword(val):
+    f = open("src/misc/keywords.json")
+    keywords = json.load(f)
+
+    return [result for result in val if result in keywords]

@@ -3,12 +3,14 @@ from bson.objectid import ObjectId
 from sanic.response import json
 from operator import itemgetter
 from src.misc.uuid import generate_uuid
+import json as jj
 
 from src.misc.pre_processing import (
     remove_punc,
     tokenizing,
     remove_stopword,
     snow_stemming,
+    filter_keyword,
 )
 
 from src.misc.tf_idf import tf_idf
@@ -62,14 +64,20 @@ def pre_processing(data):
 
         # Data source
         job_data = db["jobstreet"].find_one({"_id": ObjectId(job_id)})
-        applicants_data = list(db["linkedin"].find({"role": role}))
+        applicants_data = list(db["linkedin"].find())  # Get all applicants
 
         # Job Preprocessing
         job_result = {}
+        # job_result["remove_punct"] = remove_punc(job_data["description"])
+        # job_result["tokenizing"] = tokenizing(job_result["remove_punct"])
+        # job_result["no_stopword"] = remove_stopword(job_result["tokenizing"])
+        # job_result["stem"] = snow_stemming(job_result["no_stopword"])
+
         job_result["remove_punct"] = remove_punc(job_data["description"])
         job_result["tokenizing"] = tokenizing(job_result["remove_punct"])
         job_result["no_stopword"] = remove_stopword(job_result["tokenizing"])
         job_result["stem"] = snow_stemming(job_result["no_stopword"])
+        job_result["keyword"] = filter_keyword(job_result["stem"])
 
         # Upload job preprocessing to db
         job_result = {
@@ -78,6 +86,7 @@ def pre_processing(data):
             "ref_id": job_data["_id"],
             "result": job_result,
         }
+
         db["text_preprocessing"].insert_one(job_result)
 
         # Applicants Preprocessing
@@ -109,16 +118,23 @@ def pre_processing(data):
                 [_headline, _about, _education, _experience, _skill, _license, _project]
             )
 
+            # _remove_punct = remove_punc(merged_data)
+            # _tokenizing = tokenizing(_remove_punct)
+            # _no_stopword = remove_stopword(_tokenizing)
+            # _stem = snow_stemming(_no_stopword)
+
             _remove_punct = remove_punc(merged_data)
             _tokenizing = tokenizing(_remove_punct)
             _no_stopword = remove_stopword(_tokenizing)
             _stem = snow_stemming(_no_stopword)
+            _keyword = filter_keyword(_stem)
 
             _result["result"] = {
                 "remove_punct": _remove_punct,
                 "tokenizing": _tokenizing,
                 "no_stopword": _no_stopword,
                 "stem": _stem,
+                "keyword": _keyword,
             }
 
             _result["type"] = "applicant"
