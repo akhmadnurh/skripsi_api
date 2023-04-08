@@ -9,7 +9,7 @@ def tf_idf(datas):
     for data in datas:
         processed_data.append(" ".join(data["result"]["keyword"]))
 
-    vectorizer = TfidfVectorizer()
+    vectorizer = TfidfVectorizer(norm=None)
     tf_idf_response = vectorizer.fit_transform(processed_data)
 
     # Merge data

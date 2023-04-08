@@ -7,4 +7,4 @@ load_dotenv()
 
 client = pymongo.MongoClient(os.getenv("DATABASE_URL"))
 
-db = client["skripsi"]
+db = client["job_applicant_similarity"]
